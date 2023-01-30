@@ -1,0 +1,69 @@
+1ère étape de l'optimisation d'un programme : connaître son OS pour bien coder, exemple: 4 coeurs physiques + hyperthreading=8 coeurs logiques
+hyperthreading peut poser problème si les deux threads du coeur ont besoin du même accès mémoire, sur de la bureautique aucun soucis
+Regarder pour utiliser ou non mpiforpy
+Pour connaître la machine : lscpu 
+Sur mon ordi: 4 coeurs physiques + 2 coeurs par thread = 8 coeurs logiques
+Cache : L1d 128KiB, L1i 256KiB, L2 2MiB,L3 4MiB
+
+EXERCICE 1 :
+
+Question 1 : 
+
+Sur 5 éxécutions, la moyenne  :
+Dimension 1023 : 1.9299 secondes (1109 Mflops), 1024 : 24.13 secondes (89.12 Mflops), 1025 : 2.1654 secondes (1008 Mflops)
+Explication : 
+La classe matrice est stockée en double précision(64bits, 8 octets par flottant)
+Le PB : associative memory cache : chaque portion de la mémoire va être mappée sur une zone ("ligne") particulière du cache (avec un modulo car mémoire>>cache)
+Si la matrice a un multiple de la taille des portions comme nombre de lignes, chaque ligne va être mappée sur le même cache => utilisation virtuelle d'un cache beaucoup plus petit.
+Pour résoudre ce problème, il faudrait faire du padding: faire le calcul avec une matrice 25*25 complétée par une ligne et une colonne de zéros que l'on n'utilisera pas 
+
+Question 2 :
+
+Le stockage de la matrice (ligne par ligne ou colonne par colonne) joue beaucoup
+sur l'efficacité du parcours (pour pouvoir le plus possible parcourir la mémoire de manière continue)
+Si on va parcourir ligne par ligne, il faudra stocker ligner par ligne
+
+Pour savoir comment on stocke: on regarde l'opérateur d'accès, ici c'est i+j*nRow (nRow=taille des colonnes) => pas de saut quand on incrémente i => on stocke en colonnes.
+=> il faudra que la plus petite boucle parcours des lignes et pas des colonnes pour pas faire plein de sauts
+
+Le plus opti : parcourir par k puis j puis i, ou j puis k puis i (comme i parcours des lignes)
+On passe de 20 secondes pour 1024 à 1.5 secondes. Pour 1023 ou 1025 pas de différence.
+
+Question 3 :
+
+On change le produit matriciel en ajoutant : 
+#pragma omp parallel for private(i,j,k) shared(A,B,C)
+Je fais le test avec les boucles dans l'ordre le plus naif des boucles (i,j,k) pour observer une plus grande différence avec cette optimisation.
+On passe de 20 secondes à 6 secondes avec 3 threads, avec 2 on a 9 secondes. Au dessus de 3 on reste à 6.
+
+Note : en inversant l'ordre des boucles pour faire le parcours de manière efficace on perd en précision, le résultat du calcul devient faux, incompréhensible.
+
+Question 4 :
+Ici les threads font plus ou moins la même chose, il semble plus intéressant de leur donner une mission chacun. Il semble aussi que l'on n'utilise que 3 threads pour la boucle sur les 8 disponibles sur ma machine.
+
+
+Question 5 :
+Pb erreur math, la même erreur qu'en paralisant et en mettant les boucles dans le bon ordre. 
+J'ai du coup enlevé la vérif pour pouvoir avoir les temps de calcul car l'erreur semble faible.
+Avec le bon ordre des boucles dans prodSubBlocks, en séquentiel :
+	Taille de bloc 2 : 0.25 secondes
+	Taille de bloc 4 : 0.026 secondes
+	Taille de bloc 8 : 0.0055 secondes
+	Taille de bloc 16 : 0.0031 secondes
+	Taille de bloc 64 : 0.0033 secondes
+	Taille de bloc 128 : 0.0045 secondes 
+	Taille de bloc 256 : 0.013 secondes 
+Optimum : 16.
+
+Question 6 :
+Le calcul est déjà bien plus efficace que celui scalaire (en séquentiel 1.5 secondes)
+
+Question 7 :
+En parallélélisant ça ne change presque rien mais on perd du temps de calcul, encore plus en parallélélisant la boucle des blocs.
+
+
+Question 8 :
+Avec le test blas, on a un temps supérieur (0.045 secondes), la librairie utilisée par l'exemple dans test_product_matrice_blas.cpp ne doit pas être la librairie de calcul la plus performante, il y aurait par exemple openblas mais je n'ai pas réussi à l'utiliser dans le code.
+
+
+EXERCICE 2 :
