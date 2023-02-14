@@ -74,7 +74,13 @@ if(rank==0):
         buckets[i]=bucket 
         bucketcount[bucket]+=1
     bucketsize=np.empty(1, np.int64)
-    #rint(f"Taille des seaux : {bucketcount}\n")  
+    #print(f"Taille des seaux : {bucketcount}\n")  
+
+#Remplacer cette partie par un Gather fait par chaque thread, récupérant les bons 
+#éléments donnés # par chaque autre thread, calculés avec find_bucket après un scatter des bornes
+
+
+
 
 else :
     bucketsize=np.empty(1, np.int64)
