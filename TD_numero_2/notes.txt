@@ -1,0 +1,12 @@
+Exercice 1, 2.1 et 2.2 : à faire 
+pour lancer les scripts python :
+mpiexec -n Numproc python3 -m mpi4py filename.py
+
+
+Pour les prochains compte-rendus : tracer un graphe avec t(n) selon n le nombre de process
+Tracer S(n)=t(1)/t(n), placer une barre verticale au nombre max de coeurs limites de notre machine.
+montrer la sortie de lscpu (y compris sur machine salle)
+
+
+Exercice 2.3 : Mandelbrot
+
