@@ -249,10 +249,12 @@ int main(int nargs, char *argv[])
                 }
                 else
                 {
+
                     cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud);
                 }
             }
-            MPI_Send((double *)cloud.m_setOfPoints.data(), 2 * cloud.numberOfPoints(), MPI_DOUBLE, 0, 1111, globcom);
+            if (again == 1)
+                MPI_Send((double *)cloud.m_setOfPoints.data(), 2 * cloud.numberOfPoints(), MPI_DOUBLE, 0, 1111, globcom);
         }
         free(tabloc);
     }
