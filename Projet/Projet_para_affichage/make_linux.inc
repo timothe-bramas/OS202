@@ -3,7 +3,7 @@
 CXX=mpicxx
 CXXFLAGS = -std=c++17
 ifdef DEBUG
-CXXFLAGS += -g -O0 -Wall -fbounds-check -pedantic -fsanitize=address -fopenmp
+CXXFLAGS += -g -O0 -Wall -fbounds-check -pedantic -fsanitize=address -fopenmp -Wfatal-errors
 CXXFLAGS2 = CXXFLAGS
 else
 CXXFLAGS2 = ${CXXFLAGS} -O2 -march=native -Wall -fopenmp

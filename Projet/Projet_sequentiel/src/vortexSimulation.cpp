@@ -169,7 +169,7 @@ int main(int nargs, char *argv[])
             }
             auto endcalc = std::chrono::system_clock::now();
             std::chrono::duration<double> diffcalc = endcalc - startcalc;
-            std::cout << "Temps de calcul : " << std::to_string(diffcalc.count()) << "sec" << std::endl;
+            // std::cout << "Temps de calcul : " << std::to_string(diffcalc.count()) << "sec" << std::endl;
         }
         myScreen.clear(sf::Color::Black);
         std::string strDt = std::string("Time step : ") + std::to_string(dt);
