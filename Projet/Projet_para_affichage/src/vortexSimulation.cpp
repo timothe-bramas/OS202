@@ -124,6 +124,7 @@ int main(int nargs, char *argv[])
         resx = std::stoull(argv[2]);
         resy = std::stoull(argv[3]);
     }
+    
     auto vortices = std::get<0>(config);
     auto isMobile = std::get<1>(config);
     auto grid = std::get<2>(config);
