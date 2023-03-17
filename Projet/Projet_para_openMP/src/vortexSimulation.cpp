@@ -103,9 +103,9 @@ auto readConfigFile( std::ifstream& input , int nbProcessors, int sliceNo)
     return std::make_tuple(vortices, isMobile, cartesianGrid, cloudOfPoints);
 }
 
-int main(int nargs, char *argv[])
-{
 
+int main( int nargs, char* argv[] )
+{
     int rank, nbp;
     MPI_Comm globcom;
     MPI_Init(&nargs, &argv);
@@ -121,16 +121,112 @@ int main(int nargs, char *argv[])
         return EXIT_FAILURE;
     }
 
+    char const* filename;
+    if (nargs==1)
+    {
+        std::cout << "Usage : vortexsimulator <nom fichier configuration>" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // define slice no
+    int sliceNo = 3;
+
+    filename = argv[1];
+    std::ifstream fich(filename);
+    auto config = readConfigFile(fich, nbp, sliceNo);
+    fich.close();
+
+    std::size_t resx=800, resy=600;
+    if (nargs>3)
+    {
+        resx = std::stoull(argv[2]);
+        resy = std::stoull(argv[3]);
+    }
+
+    auto vortices = std::get<0>(config);
+    auto isMobile = std::get<1>(config);
+    auto grid     = std::get<2>(config);
+    auto cloud    = std::get<3>(config);
+
+    std::cout << "######## Vortex simultor ########" << std::endl << std::endl;
+    std::cout << "Press P for play animation " << std::endl;
+    std::cout << "Press S to stop animation" << std::endl;
+    std::cout << "Press right cursor to advance step by step in time" << std::endl;
+    std::cout << "Press down cursor to halve the time step" << std::endl;
+    std::cout << "Press up cursor to double the time step" << std::endl;
+
+    grid.updateVelocityField(vortices);
+
+    Graphisme::Screen myScreen( {resx,resy}, {grid.getLeftBottomVertex(), grid.getRightTopVertex()} );
+    bool animate=false;
+    double dt = 0.1;
+
+    
+    while (myScreen.isOpen())
+    {
+        auto start = std::chrono::system_clock::now();
+        bool advance = false;
+        // on inspecte tous les évènements de la fenêtre qui ont été émis depuis la précédente itération
+        sf::Event event;
+        while (myScreen.pollEvent(event))
+        {
+            // évènement "fermeture demandée" : on ferme la fenêtre
+            if (event.type == sf::Event::Closed)
+                myScreen.close();
+            if (event.type == sf::Event::Resized)
+            {
+                // on met à jour la vue, avec la nouvelle taille de la fenêtre
+                myScreen.resize(event);
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::P)) animate = true;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) animate = false;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) dt *= 2;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) dt /= 2;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) advance = true;
+        }
+
+        // parallelise here  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~```
+        if (animate | advance)
+        {
+            if (isMobile)
+            {
+                cloud = Numeric::solve_RK4_movable_vortices(dt, grid, vortices, cloud);
+            }
+            else
+            {
+                cloud = Numeric::solve_RK4_fixed_vortices(dt, grid, cloud);
+            }
+        }
+
+        // parallelise ends here ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~```
+        
+        myScreen.clear(sf::Color::Black);
+        std::string strDt = std::string("Time step : ") + std::to_string(dt);
+        myScreen.drawText(strDt, Geometry::Point<double>{50, double(myScreen.getGeometry().second-96)});
+        myScreen.displayVelocityField(grid, vortices);
+        myScreen.displayParticles(grid, vortices, cloud);
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = end - start;
+        std::string str_fps = std::string("FPS : ") + std::to_string(1./diff.count());
+        myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second-96)});
+        myScreen.display();
+        
+        
+    }
+
+    return EXIT_SUCCESS;
+ }
+
+int main(int nargs, char *argv[])
+{
+
     char const *filename;
     if (nargs == 1)
     {
         std::cout << "Usage : vortexsimulator <nom fichier configuration>" << std::endl;
         return EXIT_FAILURE;
     }
-    filename = argv[1];
-    std::ifstream fich(filename);
-    auto config = readConfigFile(fich);
-    fich.close();
+
 
     std::size_t resx = 800, resy = 600;
     if (nargs > 3)
@@ -138,6 +234,7 @@ int main(int nargs, char *argv[])
         resx = std::stoull(argv[2]);
         resy = std::stoull(argv[3]);
     }
+
     auto vortices = std::get<0>(config);
     auto isMobile = std::get<1>(config);
     auto grid = std::get<2>(config);
@@ -147,6 +244,7 @@ int main(int nargs, char *argv[])
     double again = 1; // il servira pour dire au process 1 jusqu'à quand calculer
 
     if (rank == 0)
+
     {
         std::cout << "######## Vortex simultor ########" << std::endl
                   << std::endl;
@@ -234,7 +332,7 @@ int main(int nargs, char *argv[])
             myScreen.display();
         }
     } 
-    else    
+    else
     {
         bool animate = false;
         bool advance = false;
