@@ -169,18 +169,18 @@ int main(int nargs, char *argv[])
             }
             auto endcalc = std::chrono::system_clock::now();
             std::chrono::duration<double> diffcalc = endcalc - startcalc;
-            //std::cout << "Temps de calcul : " << std::to_string(diffcalc.count()) << "sec" << std::endl;
+            // std::cout << "Temps de calcul : " << std::to_string(diffcalc.count()) << "sec" << std::endl;
         }
-        auto start_aff=std::chrono::system_clock::now();
+        auto start_aff = std::chrono::system_clock::now();
         myScreen.clear(sf::Color::Black);
         std::string strDt = std::string("Time step : ") + std::to_string(dt);
         myScreen.drawText(strDt, Geometry::Point<double>{50, double(myScreen.getGeometry().second - 96)});
         myScreen.displayVelocityField(grid, vortices);
         myScreen.displayParticles(grid, vortices, cloud);
         auto end = std::chrono::system_clock::now();
-        auto end_aff=std::chrono::system_clock::now();
-        std::chrono::duration<double> diffaff=end_aff - start_aff;
-        //std::cout << "Temps d'affichage : " << std::to_string(diffaff.count()) << "sec" << std::endl;
+        auto end_aff = std::chrono::system_clock::now();
+        std::chrono::duration<double> diffaff = end_aff - start_aff;
+        // std::cout << "Temps d'affichage : " << std::to_string(diffaff.count()) << "sec" << std::endl;
         std::chrono::duration<double> diff = end - start;
         std::string str_fps = std::string("FPS : ") + std::to_string(1. / diff.count());
         myScreen.drawText(str_fps, Geometry::Point<double>{300, double(myScreen.getGeometry().second - 96)});

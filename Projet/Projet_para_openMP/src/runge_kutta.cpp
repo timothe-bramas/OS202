@@ -1,6 +1,7 @@
 #include <iostream>
 #include "runge_kutta.hpp"
 #include "cartesian_grid_of_speed.hpp"
+#include <omp.h>
 using namespace Geometry;
 
 Geometry::CloudOfPoints
@@ -12,7 +13,9 @@ Numeric::solve_RK4_fixed_vortices(double dt, CartesianGridOfSpeed const &t_veloc
 
     Geometry::CloudOfPoints newCloud(t_points.numberOfPoints());
     // On ne bouge que les points :
-    for (std::size_t iPoint = 0; iPoint < t_points.numberOfPoints(); ++iPoint)
+    std::size_t iPoint;
+#pragma omp parallel for private(iPoint) shared(t_points, t_velocity) num_threads(2)
+    for (iPoint = 0; iPoint < t_points.numberOfPoints(); ++iPoint)
     {
         point p = t_points[iPoint];
         vector v1 = t_velocity.computeVelocityFor(p);
@@ -41,7 +44,10 @@ Numeric::solve_RK4_movable_vortices(double dt, CartesianGridOfSpeed &t_velocity,
 
     Geometry::CloudOfPoints newCloud(t_points.numberOfPoints());
     // On ne bouge que les points :
-    for (std::size_t iPoint = 0; iPoint < t_points.numberOfPoints(); ++iPoint)
+    std::size_t iPoint;
+#pragma omp parallel for private(iPoint) shared(t_points, t_velocity) num_threads(8)
+
+    for (iPoint = 0; iPoint < t_points.numberOfPoints(); ++iPoint)
     {
         point p = t_points[iPoint];
         vector v1 = t_velocity.computeVelocityFor(p);
@@ -58,9 +64,9 @@ Numeric::solve_RK4_movable_vortices(double dt, CartesianGridOfSpeed &t_velocity,
     }
     std::vector<point> newVortexCenter;
     newVortexCenter.reserve(t_vortices.numberOfVortices());
-
-    auto start_aff = std::chrono::system_clock::now();
-    for (std::size_t iVortex = 0; iVortex < t_vortices.numberOfVortices(); ++iVortex)
+    std::size_t iVortex;
+    // #pragma omp parallel for private(iVortex) shared(t_vortices, t_velocity) num_threads(2)
+    for (iVortex = 0; iVortex < t_vortices.numberOfVortices(); ++iVortex)
     {
         point p = t_vortices.getCenter(iVortex);
         vector v1 = t_vortices.computeSpeed(p);
@@ -75,7 +81,7 @@ Numeric::solve_RK4_movable_vortices(double dt, CartesianGridOfSpeed &t_velocity,
         vector v4 = t_vortices.computeSpeed(p3);
         newVortexCenter.emplace_back(t_velocity.updatePosition(p + onesixth * dt * (v1 + 2. * v2 + 2. * v3 + v4)));
     }
-    for (std::size_t iVortex = 0; iVortex < t_vortices.numberOfVortices(); ++iVortex)
+    for (iVortex = 0; iVortex < t_vortices.numberOfVortices(); ++iVortex)
     {
         t_vortices.setVortex(iVortex, newVortexCenter[iVortex],
                              t_vortices.getIntensity(iVortex));
