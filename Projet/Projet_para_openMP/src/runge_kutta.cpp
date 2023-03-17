@@ -14,7 +14,7 @@ Numeric::solve_RK4_fixed_vortices(double dt, CartesianGridOfSpeed const &t_veloc
     Geometry::CloudOfPoints newCloud(t_points.numberOfPoints());
     // On ne bouge que les points :
     std::size_t iPoint;
-#pragma omp parallel for private(iPoint) shared(t_points, t_velocity) num_threads(2)
+#pragma omp parallel for private(iPoint) shared(t_points, t_velocity) num_threads(8)
     for (iPoint = 0; iPoint < t_points.numberOfPoints(); ++iPoint)
     {
         point p = t_points[iPoint];
